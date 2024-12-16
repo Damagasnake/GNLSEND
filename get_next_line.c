@@ -6,16 +6,11 @@
 /*   By: davidma2 <davidma2@student.42madrid.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/21 10:11:35 by davidma2          #+#    #+#             */
-/*   Updated: 2024/12/04 12:02:46 by davidma2         ###   ########.fr       */
+/*   Updated: 2024/12/16 18:03:02 by davidma2         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
-#include <stddef.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/fcntl.h>
-#include <stdio.h>
 
 char	*get_next_line(int fd)
 {
@@ -24,27 +19,26 @@ char	*get_next_line(int fd)
 	char		*buffer;
 
 	line = NULL;
-	buffer = malloc((BUFFER_SIZE + 1) * sizeof(char));
 	if (fd < 0 || BUFFER_SIZE <= 0)
 	{
 		free(bytesr);
-		free(buffer);
 		bytesr = NULL;
-		buffer = NULL;
 		return (NULL);
 	}
+	buffer = malloc((BUFFER_SIZE + 1) * sizeof(char));
 	if (!buffer)
 		return (NULL);
 	bytesr = bytesr_filling(fd, bytesr, buffer);
-	if (*bytesr == 0)
+	if (!bytesr || *bytesr == 0)
 	{
-		free (bytesr);
+		free(bytesr);
 		return (bytesr = 0);
 	}
 	line = extract_line(bytesr, line);
 	bytesr = extract_new_bytesr(bytesr);
 	return (line);
 }
+
 char	*bytesr_filling(int fd, char *bytesr, char *buffer)
 {
 	ssize_t	nbytes;
@@ -57,18 +51,20 @@ char	*bytesr_filling(int fd, char *bytesr, char *buffer)
 		nbytes = read(fd, buffer, BUFFER_SIZE);
 		if (nbytes < 0)
 		{
-			free (buffer);
+			free(buffer);
+			free(bytesr);
 			return (NULL);
 		}
 		buffer[nbytes] = 0;
-		bytesr = ft_strjoin (bytesr, buffer);
+		bytesr = ft_strjoin(bytesr, buffer);
 		if ((ft_strchr(buffer, '\n')))
 			break ;
 	}
-	free (buffer);
+	free(buffer);
 	return (bytesr);
 }
-char	*extract_new_bytesr(char	*bytesr)
+
+char	*extract_new_bytesr(char *bytesr)
 {
 	int		len;
 	int		i;
@@ -90,10 +86,11 @@ char	*extract_new_bytesr(char	*bytesr)
 		new_bytesr[i] = bytesr[len + i];
 		i++;
 	}
-	free (bytesr);
+	free(bytesr);
 	new_bytesr[i] = '\0';
 	return (new_bytesr);
 }
+
 char	*extract_line(char *bytesr, char *line)
 {
 	int	len;
@@ -117,21 +114,4 @@ char	*extract_line(char *bytesr, char *line)
 	}
 	line[i] = '\0';
 	return (line);
-}
-
-int main()
-{
-	int fd;
-	char *line;
-
-	fd = open("hola.txt", O_RDONLY);
-	line = get_next_line(fd);
-	while (line)
-	{
-		printf("%s", line);
-		free(line);
-		line = get_next_line(fd);
-	}
-	close(fd);
-	return 0;
 }
